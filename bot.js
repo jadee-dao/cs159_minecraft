@@ -1,14 +1,17 @@
 const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 const mcData = require('minecraft-data');
+const inventoryViewer = require('mineflayer-web-inventory')
 
 const bot = mineflayer.createBot({
   host: 'localhost',
   port: 10008,
-  username: 'Bot'
+  username: 'Bot',
+  version: '1.19.4'
 });
 
 bot.loadPlugin(pathfinder);
+inventoryViewer(bot)
 
 bot.on('chat', (username, message) => {
   if (username === bot.username) return;
