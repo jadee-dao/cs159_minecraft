@@ -36,6 +36,7 @@ public class PlaceBlockNearby implements ITask {
         for (int x = -range; x <= range; x++) {
             for (int y = -range; y <= range; y++) {
                 for (int z = -range; z <= range; z++) {
+                    if (x == 0 && z == 0) continue;
                     BlockPos pos = player.getBlockPos().add(x, y, z);
                     // Check if the block is air
                     if (player.world.getBlockState(pos).isAir()) {
