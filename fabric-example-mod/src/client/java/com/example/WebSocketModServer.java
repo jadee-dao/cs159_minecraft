@@ -110,6 +110,8 @@ public class WebSocketModServer extends WebSocketServer {
             System.out.println("Plan succeeded");
             JsonMessage successMessage = new JsonMessage();
             successMessage.type = "planSuccess";
+            successMessage.inventory = Utility.getPlayerInventoryString();
+            successMessage.info = Utility.getPlayerInfoString();
             conn.send(GSON.toJson(successMessage));
         }
         _globalPlan.clear();
