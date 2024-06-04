@@ -34,11 +34,20 @@ public class PlaceBlockNearby implements ITask {
         MinecraftClient client = MinecraftClient.getInstance();
         ClientPlayerEntity player = client.player;
         for (int x = -range; x <= range; x++) {
-            for (int y = -range; y <= 0; y++) {
+            for (int y = -range; y <= range; y++) {
                 for (int z = -range; z <= range; z++) {
                     BlockPos pos = player.getBlockPos().add(x, y, z);
-                    // Check if the block is air, and the block underneath is solid
-                    if (player.world.getBlockState(pos).isAir() && player.world.getBlockState(pos.down()).isSolidBlock(player.world, pos.down())) {
+                    // Check if the block is air
+                    if (player.world.getBlockState(pos).isAir()) {
+                        // Check for some adjacent block
+                        boolean hasAdjacent =
+                                player.world.getBlockState(pos.down()).isSolidBlock(player.world, pos.down())
+                                || player.world.getBlockState(pos.north()).isSolidBlock(player.world, pos.north())
+                                || player.world.getBlockState(pos.south()).isSolidBlock(player.world, pos.south())
+                                || player.world.getBlockState(pos.east()).isSolidBlock(player.world, pos.east())
+                                || player.world.getBlockState(pos.west()).isSolidBlock(player.world, pos.west())
+                                || player.world.getBlockState(pos.up()).isSolidBlock(player.world, pos.up());
+                        if (!hasAdjacent) continue;
                         double score = player.getBlockPos().getSquaredDistance(pos);
                         if (score != 0 && score < smallestScore) {
                             best = pos;
