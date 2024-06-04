@@ -53,7 +53,7 @@ async def send_message():
 command_prompt = (
     f"Now, generate a series of commands to accomplish the given goal according to a user-provided plan. "
     f"The available commands are:\n"
-    f"1. goto_block block_type - go to a block (e.g., goto_block portal or goto_block ender_chest).\n"
+    f"1. goto_block block_type - go to a block (e.g., goto_block oak_log or goto_block ender_chest). This has to be an actual block, not something like 'cave' or 'open_space'.\n"
     f"2. mine amount block_type - mine a block until you have \"amount\" total in your inventory (e.g., mine 64 diamond_ore). The block should be specified by its actual name, not the drop (e.g., use diamond_ore instead of diamond, stone instead of cobblestone).\n"
     f"If blocks are not in view, the player will explore caves by default. "
     f"To mine something not underground (e.g., logs), first goto_block (e.g., goto_block oak_log) and then mine (e.g., mine oak_log).\n"
@@ -79,6 +79,7 @@ def query_chatgpt_for_initial_plan(goal, inventory, info):
         f"3. You should index the two levels like ’1.’, ’1.1.’, ’1.2.’, ’2.’, ’2.1.’, etc.\n"
         f"4. The sub-goals at the bottom level should be basic actions so that I can easily execute them in the game."
         f"5. If I already have something, you don't need to generate steps to acquire it again. You can assume that I have the following items in my inventory: {inventory}. Additionally, {info}"
+        f"6. Wood type matters. For example, if I only have birch logs, you should specify birch planks."
         f"Given the goal: \"{goal}\", generate a tree-structure plan to achieve it. Output nothing but the plan."
     )
     response = client.chat.completions.create(
@@ -113,6 +114,8 @@ def query_chatgpt_for_plan_update(goal, plan, failure_reason, inventory, info):
     )
     recommand_prompt = (
         f"Now, generate a series of commands to finish accomplishing the given goal according to the new plan. "
+        f"1. If smelting or crafting times out, try surfacing to find a valid place to put the block."
+        f"2. If the error is that there is not a tool to mine the block, craft a suitable tool to mine the block."
         f"Start from the failed step, do not retrace any previous steps (except possibly a goto_block if the failed step was a mine). Output nothing but the commands, separated by newlines."
     )
 
@@ -149,9 +152,10 @@ def query_chatgpt_for_new_goal():
     new_plan_prompt = (
         f"Generate a new goal for the game that is appropriate given the current progress." 
         f"1. The goal should be specific and achievable, but still enough to advance the game."
-        f"2. Here is a list of past goals: {goals}. If it's empty, give me a good starter task."
-        f"3. Don't give any goals that are related to building. Just try to advance the game as fast as possible."
-        f"4. Output nothing except for the short goal itself."
+        f"2. Here is a list of past goals: {goals}. If it's empty, give me a good starter task like getting necessary tools."
+        f"3. Note that I am in peaceful, so I don't need armor/gear."
+        f"4. Don't give any goals that are related to building. Just try to advance the game as fast as possible."
+        f"5. Output nothing except for the short goal itself."
     )
     response = client.chat.completions.create(
         model="gpt-4o",
