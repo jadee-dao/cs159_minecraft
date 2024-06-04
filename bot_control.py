@@ -3,7 +3,10 @@ import websockets
 import json
 from openai import OpenAI
 
-client = OpenAI(api_key = "API-KEY-HERE")
+client = OpenAI(api_key = "")
+goals = []
+
+auto_goal = True
 
 async def send_message():
     uri = "ws://localhost:8080"
@@ -23,13 +26,23 @@ async def send_message():
             elif response_data['type'] == 'setGoal':
                 goal = response_data['body'][0]
                 print("Received goal " + goal)
-                initial_plan = query_chatgpt_for_initial_plan(goal)
+                initial_plan = query_chatgpt_for_initial_plan(goal, response_data['inventory'],  response_data['info'])
                 print("Initial plan: " + str(initial_plan))
                 initial_message = {
                     "type": "initialPlan",
                     "body": initial_plan
                 }
                 await websocket.send(json.dumps(initial_message))
+            elif response_data['type'] == 'planSuccess':
+                print("Plan succeeded")
+                if auto_goal:
+                    new_goal = query_chatgpt_for_new_goal()
+                    new_plan = query_chatgpt_for_initial_plan(new_goal, response_data['inventory'],  response_data['info'])
+                    new_message = {
+                        "type": "initialPlan",
+                        "body": new_plan
+                    }
+                    await websocket.send(json.dumps(new_message))
             else:
                 print(f"Received: {response}")
 
@@ -51,7 +64,7 @@ command_prompt = (
     f"Given the goal: \"{{goal}}\", generate a list of commands to achieve it. Output nothing but the commands, separated by newlines."
 )
 
-def query_chatgpt_for_initial_plan(goal):
+def query_chatgpt_for_initial_plan(goal, inventory, info):
     system_prompt = (
         f"You serve as an assistant that helps me play Minecraft."
     )
@@ -61,6 +74,7 @@ def query_chatgpt_for_initial_plan(goal):
         f"2. Describe each step in one line.\n"
         f"3. You should index the two levels like ’1.’, ’1.1.’, ’1.2.’, ’2.’, ’2.1.’, etc.\n"
         f"4. The sub-goals at the bottom level should be basic actions so that I can easily execute them in the game."
+        f"5. If I already have something, you don't need to generate steps to acquire it again. You can assume that I have the following items in my inventory: {inventory}. Additionally, {info}"
         f"Given the goal: \"{goal}\", generate a tree-structure plan to achieve it. Output nothing but the plan."
     )
     response = client.chat.completions.create(
@@ -82,6 +96,7 @@ def query_chatgpt_for_initial_plan(goal):
         ],
         max_tokens=150
     )
+    goals.append(goal)
     return command_response.choices[0].message.content.strip().split('\n')
 
 def query_chatgpt_for_plan_update(goal, plan, failure_reason, inventory, info):
@@ -122,5 +137,27 @@ def query_chatgpt_for_plan_update(goal, plan, failure_reason, inventory, info):
         max_tokens=150
     )
     return command_response.choices[0].message.content.strip().split('\n')
+
+def query_chatgpt_for_new_goal():
+    system_prompt = (
+        f"You serve as an assistant that helps me play Minecraft."
+    )
+    new_plan_prompt = (
+        f"Generate a new goal for the game that is appropriate given the current progress." 
+        f"1. The goal should be specific and achievable, but still enough to advance the game."
+        f"2. Here is a list of past goals: {goals}."
+        f"3. Don't give any goals that are related to building. Just try to advance the game as fast as possible."
+        f"4. Output nothing except for the short goal itself."
+    )
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": new_plan_prompt}
+        ],
+        max_tokens=150
+    )
+    print("New goal: " + response.choices[0].message.content.strip())
+    return response.choices[0].message.content.strip()
 
 asyncio.run(send_message())
