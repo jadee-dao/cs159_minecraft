@@ -41,13 +41,13 @@ public class Plan {
                     return TaskState.terminatedFailure("Sleep interrupted");
                 }
             }
+            task.cleanup();
 
             if (task.getState().getStatus() == TaskStatus.TERMINATED_FAILURE) {
                 return TaskState.terminatedFailure(
                         "Command " + command + " failed: " +
                         task.getState().getFailureReason());
             }
-            task.cleanup();
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {

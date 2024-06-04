@@ -7,6 +7,7 @@ client = OpenAI(api_key = "")
 goals = []
 
 auto_goal = False
+temp = 0.3
 
 async def send_message():
     uri = "ws://localhost:8080"
@@ -93,7 +94,8 @@ def query_chatgpt_for_initial_plan(goal, inventory, info):
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": plan_prompt}
         ],
-        max_tokens=150
+        max_tokens=150,
+        temperature = temp
     )
     initial_plan_text = response.choices[0].message.content.strip()
     command_response = client.chat.completions.create(
@@ -104,7 +106,8 @@ def query_chatgpt_for_initial_plan(goal, inventory, info):
             {"role": "assistant", "content": initial_plan_text},
             {"role": "user", "content": command_prompt.format(goal=goal)}
         ],
-        max_tokens=150
+        max_tokens=150,
+        temperature = temp
     )
     goals.append(goal)
     return command_response.choices[0].message.content.strip().split('\n')
@@ -133,7 +136,8 @@ def query_chatgpt_for_plan_update(goal, plan, failure_reason, inventory, info):
             {"role": "assistant", "content": plan},
             {"role": "user", "content": replan_prompt}
         ],
-        max_tokens=150
+        max_tokens=150,
+        temperature = temp
     )
     newplan_text = plan_response.choices[0].message.content.strip()
     print("Failure explanation and new plan: " + newplan_text)
@@ -147,7 +151,8 @@ def query_chatgpt_for_plan_update(goal, plan, failure_reason, inventory, info):
             {"role": "assistant", "content": newplan_text},
             {"role": "user", "content": recommand_prompt}
         ],
-        max_tokens=150
+        max_tokens=150,
+        temperature = temp
     )
     return command_response.choices[0].message.content.strip().split('\n')
 
@@ -156,7 +161,7 @@ def query_chatgpt_for_new_goal():
         f"You serve as an assistant that helps me play Minecraft."
     )
     new_plan_prompt = (
-        f"Generate a new goal for the game that is appropriate given the current progress." 
+        f"Generate a new goal for the game that is appropriate given the current progress."
         f"1. The goal should be specific and achievable, but still enough to advance the game."
         f"2. Here is a list of past goals: {goals}. If it's empty, give me a good starter task like getting necessary tools."
         f"3. Note that I am in peaceful, so I don't need armor/gear."
@@ -169,7 +174,8 @@ def query_chatgpt_for_new_goal():
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": new_plan_prompt}
         ],
-        max_tokens=150
+        max_tokens=150,
+        temperature = temp
     )
     print("New goal: " + response.choices[0].message.content.strip())
     return response.choices[0].message.content.strip()

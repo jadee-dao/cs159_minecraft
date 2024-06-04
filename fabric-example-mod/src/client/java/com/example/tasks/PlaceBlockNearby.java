@@ -18,7 +18,8 @@ import java.util.List;
 
 public class PlaceBlockNearby implements ITask {
     String _block;
-    long _startTime;
+    int attempts = 0;
+    long _currentTaskTime;
     TaskState _failedState;
 
     public PlaceBlockNearby(String block) {
@@ -85,7 +86,7 @@ public class PlaceBlockNearby implements ITask {
 
     @Override
     public void execute() {
-        _startTime = System.currentTimeMillis();
+        _currentTaskTime = System.currentTimeMillis();
         Item item = Registries.ITEM.get(new Identifier(_block));
         Block block = Block.getBlockFromItem(item);
         if (block.equals(Blocks.AIR)) {
@@ -111,8 +112,15 @@ public class PlaceBlockNearby implements ITask {
 
         if (Utility.findBlockNearby(range, player, block) != null) return TaskState.terminatedSuccess();
 
-        if(System.currentTimeMillis() - _startTime > 5000) {
-            return TaskState.terminatedFailure("Timed out");
+        // If it's taking too long, find another place
+        if(System.currentTimeMillis() - _currentTaskTime > 10000) {
+            _currentTaskTime = System.currentTimeMillis();
+            attempts++;
+            placeNearby(block);
+        }
+
+        if(attempts > 5) {
+            return TaskState.terminatedFailure("Could not find a suitable place to place the block");
         }
 
         return TaskState.running();

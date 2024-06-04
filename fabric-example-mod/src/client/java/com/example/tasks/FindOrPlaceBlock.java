@@ -7,8 +7,16 @@ import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
+import net.minecraft.recipe.Recipe;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import static com.example.tasks.Craft.*;
 
 public class FindOrPlaceBlock implements ITask {
 
@@ -25,7 +33,8 @@ public class FindOrPlaceBlock implements ITask {
         Item item = Registries.ITEM.get(new Identifier(block));
         Block blockType = Block.getBlockFromItem(item);
         if (Utility.findBlockNearby(3, client.player, blockType) == null) {
-            // If inventory contains, place. Otherwise, try to find.
+
+            // If inventory contains or can make, place. Otherwise, try to find.
             if (client.player.getInventory().count(item) != 0) {
                 _internalTask = new PlaceBlockNearby(block);
                 _internalTask.execute();

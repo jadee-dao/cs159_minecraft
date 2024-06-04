@@ -4,6 +4,8 @@ import baritone.api.BaritoneAPI;
 import com.example.tasks.TaskState;
 import com.example.tasks.TaskStatus;
 import com.google.gson.Gson;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.text.Text;
 import org.java_websocket.server.WebSocketServer;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -65,6 +67,7 @@ public class WebSocketModServer extends WebSocketServer {
     }
 
     private void handleInitialPlan(String[] commands, WebSocket conn) {
+        Utility.chat("Executing plan...");
         _globalPlan.clear();
         for (String command : commands) {
             List<ITask> newTasks = BaritoneHandler.getTasksFromBaritoneCommand(command);
@@ -75,6 +78,7 @@ public class WebSocketModServer extends WebSocketServer {
         TaskState state = _globalPlan.execute();
         if (state.getStatus() == TaskStatus.TERMINATED_FAILURE) {
             System.out.println("Plan failed: " + state.getFailureReason());
+            Utility.chat(Utility.getFailureMessage(state.getFailureReason()));
             JsonMessage failureMessage = new JsonMessage();
             failureMessage.type = "planFailure";
             failureMessage.failureReason = state.getFailureReason();
@@ -83,6 +87,7 @@ public class WebSocketModServer extends WebSocketServer {
             conn.send(GSON.toJson(failureMessage));
         } else {
             System.out.println("Plan succeeded");
+            Utility.chat(Utility.getSuccessMessage());
             JsonMessage successMessage = new JsonMessage();
             successMessage.type = "planSuccess";
             conn.send(GSON.toJson(successMessage));
@@ -91,6 +96,7 @@ public class WebSocketModServer extends WebSocketServer {
     }
 
     private void handlePlanUpdate(String[] commands, WebSocket conn) {
+        Utility.chat("Executing updated plan...");
         for (String command : commands) {
             List<ITask> newTasks = BaritoneHandler.getTasksFromBaritoneCommand(command);
             for (ITask task : newTasks) {
@@ -100,6 +106,7 @@ public class WebSocketModServer extends WebSocketServer {
         TaskState state = _globalPlan.execute();
         if (state.getStatus() == TaskStatus.TERMINATED_FAILURE) {
             System.out.println("Plan failed: " + state.getFailureReason());
+            Utility.chat(Utility.getFailureMessage(state.getFailureReason()));
             JsonMessage failureMessage = new JsonMessage();
             failureMessage.type = "planFailure";
             failureMessage.failureReason = state.getFailureReason();
@@ -108,6 +115,7 @@ public class WebSocketModServer extends WebSocketServer {
             conn.send(GSON.toJson(failureMessage));
         } else {
             System.out.println("Plan succeeded");
+            Utility.chat(Utility.getSuccessMessage());
             JsonMessage successMessage = new JsonMessage();
             successMessage.type = "planSuccess";
             successMessage.inventory = Utility.getPlayerInventoryString();

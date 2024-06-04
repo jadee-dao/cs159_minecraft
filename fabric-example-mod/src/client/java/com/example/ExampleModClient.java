@@ -17,11 +17,12 @@ import java.net.InetSocketAddress;
 
 public class ExampleModClient implements ClientModInitializer {
 	private WebSocketModServer server;
+	private Plan globalPlan;
 	private static final Gson GSON = new Gson();
 
 	@Override
 	public void onInitializeClient() {
-		Plan globalPlan = new Plan();
+		globalPlan = new Plan();
 
 		server = new WebSocketModServer(new InetSocketAddress("localhost", 8080), globalPlan);
 		server.setConnectionLostTimeout(0);
@@ -35,6 +36,13 @@ public class ExampleModClient implements ClientModInitializer {
 		serverCommandSourceCommandDispatcher.register(literal("setgoal")
 				.then(argument("goal", StringArgumentType.string())
 						.executes(this::handleSetGoalCommand)));
+		serverCommandSourceCommandDispatcher.register(literal("cleargoal").executes(this::handleClearGoalCommand));
+	}
+
+	private int handleClearGoalCommand(CommandContext<ServerCommandSource> context) {
+		globalPlan.clear();
+		context.getSource().sendFeedback(Text.literal("Goal cleared"), false);
+		return 1;
 	}
 
 	private int handleSetGoalCommand(CommandContext<ServerCommandSource> context) {

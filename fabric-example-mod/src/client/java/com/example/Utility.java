@@ -4,7 +4,9 @@ import net.minecraft.block.Block;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
+import org.apache.logging.log4j.core.tools.picocli.CommandLine;
 
 public class Utility {
 
@@ -49,6 +51,20 @@ public class Utility {
         ClientPlayerEntity player = client.player;
         BlockPos pos = player.getBlockPos();
         String biome = player.world.getBiome(pos).toString();
-        return "Player is in biome " + biome + ".";
+        String yLevel = Integer.toString(pos.getY());
+        return "Player is in biome " + biome + " at y-level " + yLevel + ".";
+    }
+
+    public static void chat(String message) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.inGameHud.getChatHud().addMessage(Text.of(message));
+    }
+
+    public static String getFailureMessage(String failureReason) {
+        return "§4§lTask failed: §4" + failureReason;
+    }
+
+    public static String getSuccessMessage() {
+        return "§2§lPlan succeeded!";
     }
 }
