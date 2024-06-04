@@ -6,7 +6,7 @@ from openai import OpenAI
 client = OpenAI(api_key = "")
 goals = []
 
-auto_goal = True
+auto_goal = False
 
 async def send_message():
     uri = "ws://localhost:8080"
@@ -25,7 +25,11 @@ async def send_message():
                 await websocket.send(json.dumps(update_message))
             elif response_data['type'] == 'setGoal':
                 goal = response_data['body'][0]
-                print("Received goal " + goal)
+                if goal == 'auto':
+                    auto_goal = True
+                    print("Auto-generating initial goal")
+                    goal = query_chatgpt_for_new_goal()
+                print("Received goal: " + goal)
                 initial_plan = query_chatgpt_for_initial_plan(goal, response_data['inventory'],  response_data['info'])
                 print("Initial plan: " + str(initial_plan))
                 initial_message = {
@@ -145,7 +149,7 @@ def query_chatgpt_for_new_goal():
     new_plan_prompt = (
         f"Generate a new goal for the game that is appropriate given the current progress." 
         f"1. The goal should be specific and achievable, but still enough to advance the game."
-        f"2. Here is a list of past goals: {goals}."
+        f"2. Here is a list of past goals: {goals}. If it's empty, give me a good starter task."
         f"3. Don't give any goals that are related to building. Just try to advance the game as fast as possible."
         f"4. Output nothing except for the short goal itself."
     )
