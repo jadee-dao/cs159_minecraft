@@ -11,9 +11,12 @@ auto_goal = False
 async def send_message():
     uri = "ws://localhost:8080"
     async with websockets.connect(uri, ping_interval=None) as websocket:
+        iterations = 0
         while True:
             response = await websocket.recv()
             response_data = json.loads(response)
+            iterations += 1
+            print(f"Iteration {iterations}")
             if response_data['type'] == 'planFailure':
                 print(f"Plan failed: {response_data['failureReason']}")
                 new_plan = query_chatgpt_for_plan_update(goal, "\n".join(initial_plan), response_data['failureReason'],  response_data['inventory'],  response_data['info'])
@@ -53,7 +56,7 @@ async def send_message():
 command_prompt = (
     f"Now, generate a series of commands to accomplish the given goal according to a user-provided plan. "
     f"The available commands are:\n"
-    f"1. goto_block block_type - go to a block (e.g., goto_block oak_log or goto_block ender_chest). This has to be an actual block, not something like 'cave' or 'open_space'.\n"
+    f"1. goto_block block_type - go to a block (e.g., goto_block oak_log or goto_block crafting_table).\n"
     f"2. mine amount block_type - mine a block until you have \"amount\" total in your inventory (e.g., mine 64 diamond_ore). The block should be specified by its actual name, not the drop (e.g., use diamond_ore instead of diamond, stone instead of cobblestone).\n"
     f"If blocks are not in view, the player will explore caves by default. "
     f"To mine something not underground (e.g., logs), first goto_block (e.g., goto_block oak_log) and then mine (e.g., mine oak_log).\n"
@@ -109,13 +112,14 @@ def query_chatgpt_for_plan_update(goal, plan, failure_reason, inventory, info):
         f"You serve as an assistant that helps me play Minecraft."
     )
     replan_prompt = (
-        f"{failure_reason}. Please reason through why this might have happened, and plan a new method of achieving the goal: \"{goal}\", "
+        f"{failure_reason}. Please reason through why this might have happened, "
         f"starting from the step that failed. Your current inventory is: {inventory}. Additionally, {info}"
     )
     recommand_prompt = (
         f"Now, generate a series of commands to finish accomplishing the given goal according to the new plan. "
         f"1. If smelting or crafting times out, try surfacing to find a valid place to put the block."
         f"2. If the error is that there is not a tool to mine the block, craft a suitable tool to mine the block."
+        f"3. If crafting fails, make sure you have all the necessary materials in your inventory."
         f"Start from the failed step, do not retrace any previous steps (except possibly a goto_block if the failed step was a mine). Output nothing but the commands, separated by newlines."
     )
 
