@@ -41,7 +41,8 @@ async def send_message():
                 }
                 await websocket.send(json.dumps(initial_message))
             elif response_data['type'] == 'planSuccess':
-                print("Plan succeeded")
+                print("Plan succeeded on iteration " + str(iterations))
+                '''
                 if auto_goal:
                     new_goal = query_chatgpt_for_new_goal()
                     new_plan = query_chatgpt_for_initial_plan(new_goal, response_data['inventory'],  response_data['info'])
@@ -50,6 +51,7 @@ async def send_message():
                         "body": new_plan
                     }
                     await websocket.send(json.dumps(new_message))
+                    '''
             else:
                 print(f"Received: {response}")
 
@@ -68,7 +70,7 @@ command_prompt = (
     f"Will fail if the player does not have the block in their inventory.\n"
     f"6. goto_y_level y - attempt to go to a specific y-level in the world (e.g., goto_y_level 12).\n"
     f"Useful to go to the most likely y-level to find an ore before mining.\n\n"
-    f"Given the goal: \"{{goal}}\", generate a list of commands to achieve it. Output nothing but the commands, separated by newlines."
+    f"Given the goal: \"{{goal}}\", generate a list of commands to achieve it. Output nothing but the commands, separated by newlines. Do not include special characters to mark the start or end of the list."
 )
 
 def query_chatgpt_for_initial_plan(goal, inventory, info):
@@ -80,7 +82,7 @@ def query_chatgpt_for_initial_plan(goal, inventory, info):
         f"1. The plan tree should be exactly of depth 2.\n"
         f"2. Describe each step in one line.\n"
         f"3. You should index the two levels like ’1.’, ’1.1.’, ’1.2.’, ’2.’, ’2.1.’, etc.\n"
-        f"4. The sub-goals at the bottom level should be basic actions so that I can easily execute them in the game."
+        f"4. The sub-goals at the bottom level should be basic actions so that I can easily execute them in the game with the resources I have."
         f"5. If I already have something, you don't need to generate steps to acquire it again. You can assume that I have the following items in my inventory: {inventory}. Additionally, {info}"
         f"6. Wood type matters. For example, if I only have birch logs, you should specify birch planks."
         f"Given the goal: \"{goal}\", generate a tree-structure plan to achieve it. Output nothing but the plan."
