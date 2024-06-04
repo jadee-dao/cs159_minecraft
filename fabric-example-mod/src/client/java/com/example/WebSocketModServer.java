@@ -83,6 +83,9 @@ public class WebSocketModServer extends WebSocketServer {
             conn.send(GSON.toJson(failureMessage));
         } else {
             System.out.println("Plan succeeded");
+            JsonMessage successMessage = new JsonMessage();
+            successMessage.type = "planSuccess";
+            conn.send(GSON.toJson(successMessage));
         }
         _globalPlan.clear();
     }
@@ -105,6 +108,9 @@ public class WebSocketModServer extends WebSocketServer {
             conn.send(GSON.toJson(failureMessage));
         } else {
             System.out.println("Plan succeeded");
+            JsonMessage successMessage = new JsonMessage();
+            successMessage.type = "planSuccess";
+            conn.send(GSON.toJson(successMessage));
         }
         _globalPlan.clear();
     }

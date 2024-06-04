@@ -48,6 +48,8 @@ public class ExampleModClient implements ClientModInitializer {
 		WebSocketModServer.JsonMessage goalMessage = new WebSocketModServer.JsonMessage();
 		goalMessage.type = "setGoal";
 		goalMessage.body = new String[]{goal};
+		goalMessage.inventory = Utility.getPlayerInventoryString();
+		goalMessage.info = Utility.getPlayerInfoString();
 		server.broadcast(GSON.toJson(goalMessage));
 	}
 

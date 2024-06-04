@@ -61,6 +61,7 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	implementation 'com.google.code.gson:gson:2.8.8'
 	implementation 'org.java-websocket:Java-WebSocket:1.5.6'
+	include 'org.java-websocket:Java-WebSocket:1.5.6'
 	modImplementation urlFile("https://github.com/cabaletta/baritone/releases/download/v1.9.3/baritone-api-fabric-1.9.3.jar", 'baritone', '1.19.4-1.9.3')
 }
 
