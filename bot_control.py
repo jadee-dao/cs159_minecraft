@@ -1,7 +1,9 @@
 import asyncio
 import websockets
 import json
+import ast
 from openai import OpenAI
+import tiktoken
 
 client = OpenAI(api_key = "")
 goals = []
@@ -9,40 +11,50 @@ goals = []
 auto_goal = False
 temp = 0.3
 
+def count_tokens(text):
+    enc = tiktoken.encoding_for_model("gpt-4")
+    tokens = enc.encode(text)
+    return len(tokens)
+
 async def send_message():
     uri = "ws://localhost:8080"
     async with websockets.connect(uri, ping_interval=None) as websocket:
         iterations = 0
+        tokens = 0
+        unique_items = set()
         while True:
             response = await websocket.recv()
             response_data = json.loads(response)
             iterations += 1
-            print(f"Iteration {iterations}")
+            print(f"Iteration {iterations}, Number of Tokens {tokens}")
             if response_data['type'] == 'planFailure':
                 print(f"Plan failed: {response_data['failureReason']}")
-                new_plan = query_chatgpt_for_plan_update(goal, "\n".join(initial_plan), response_data['failureReason'],  response_data['inventory'],  response_data['info'])
+                new_plan, nTokens = query_chatgpt_for_plan_update(goal, "\n".join(initial_plan), response_data['failureReason'],  response_data['inventory'],  response_data['info'])
                 print("New plan: " + str(new_plan))
                 update_message = {
                     "type": "planUpdate",
                     "body": new_plan
                 }
+                tokens += nTokens
                 await websocket.send(json.dumps(update_message))
             elif response_data['type'] == 'setGoal':
                 goal = response_data['body'][0]
                 if goal == 'auto':
                     auto_goal = True
                     print("Auto-generating initial goal")
-                    goal = query_chatgpt_for_new_goal()
+                    goal, nTokens = query_chatgpt_for_new_goal()
                 print("Received goal: " + goal)
-                initial_plan = query_chatgpt_for_initial_plan(goal, response_data['inventory'],  response_data['info'])
+                initial_plan, nTokens = query_chatgpt_for_initial_plan(goal, response_data['inventory'],  response_data['info'])
                 print("Initial plan: " + str(initial_plan))
                 initial_message = {
                     "type": "initialPlan",
                     "body": initial_plan
                 }
+                tokens += nTokens
                 await websocket.send(json.dumps(initial_message))
             elif response_data['type'] == 'planSuccess':
                 print("Plan succeeded on iteration " + str(iterations))
+                print("Number of Tokens Used: " + tokens)
                 '''
                 if auto_goal:
                     new_goal = query_chatgpt_for_new_goal()
@@ -110,7 +122,9 @@ def query_chatgpt_for_initial_plan(goal, inventory, info):
         temperature = temp
     )
     goals.append(goal)
-    return command_response.choices[0].message.content.strip().split('\n')
+    input_tokens = count_tokens(system_prompt)*2 + count_tokens(plan_prompt)*2 + count_tokens(initial_plan_text) + count_tokens(command_prompt.format(goal=goal))
+    output_tokens = count_tokens(initial_plan_text) + count_tokens(command_response.choices[0].message.content.strip())
+    return command_response.choices[0].message.content.strip().split('\n'), input_tokens + output_tokens
 
 def query_chatgpt_for_plan_update(goal, plan, failure_reason, inventory, info):
     system_prompt = (
@@ -154,7 +168,10 @@ def query_chatgpt_for_plan_update(goal, plan, failure_reason, inventory, info):
         max_tokens=150,
         temperature = temp
     )
-    return command_response.choices[0].message.content.strip().split('\n')
+    # get number of prompt input tokens
+    input_tokens = count_tokens(system_prompt) + count_tokens(command_prompt.format(goal=goal)) + count_tokens(plan) + count_tokens(replan_prompt) + count_tokens(newplan_text) + count_tokens(recommand_prompt)
+    output_tokens = count_tokens(newplan_text) + count_tokens(command_response.choices[0].message.content.strip())
+    return command_response.choices[0].message.content.strip().split('\n'), input_tokens + output_tokens
 
 def query_chatgpt_for_new_goal():
     system_prompt = (
@@ -178,6 +195,8 @@ def query_chatgpt_for_new_goal():
         temperature = temp
     )
     print("New goal: " + response.choices[0].message.content.strip())
-    return response.choices[0].message.content.strip()
+    input_tokens = count_tokens(system_prompt) + count_tokens(new_plan_prompt)
+    output_tokens = count_tokens(response.choices[0].message.content.strip())
+    return response.choices[0].message.content.strip(), input_tokens + output_tokens
 
 asyncio.run(send_message())
