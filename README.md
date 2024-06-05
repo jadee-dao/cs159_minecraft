@@ -1,1 +1,5 @@
-# cs159_minecraft
+# Wayfarer
+
+## We introduce $\textsc{Wayfarer}$, an innovative LLM-powered embodied lifelong learning agent in Minecraft that excels at zero-shot generalization, automatic curriculum generation, and prompt efficiency. $\textsc{Wayfarer}$ leverages an automatic curriculum driven by GPT-4o to maximize exploration and task completion using a flexible controller framework, $\textsc{MineWire}$. $\textsc{Wayfarer}$ employs high-level task planning and tree-like decision-making, enabling it to achieve complex crafting goals with minimal computational expense. This approach significantly reduces token usage and costs, allowing $\textsc{Wayfarer}$ to craft a diamond pickaxe for mere cents. Our agent's capabilities are further enhanced by its ability to interpret and execute tasks dynamically, adapting to new environments and challenges on-the-fly.  Wayfarer demonstrates exceptional proficiency in Minecraft, achieving tech tree milestones and zero-shot crafting in cosistently less iterations than existing SOTA.
+
+# Video demo: https://www.youtube.com/watch?v=e1aUbt0wG0A&ab_channel=JadelynnD
